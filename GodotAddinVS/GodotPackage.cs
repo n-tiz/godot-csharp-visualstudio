@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using GodotCompletionProviders;
 using GodotTools.IdeMessaging;
 using GodotTools.IdeMessaging.Requests;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Events;
 using Microsoft.VisualStudio.Shell.Interop;
 using ILogger = GodotCompletionProviders.ILogger;
 using Task = System.Threading.Tasks.Task;
@@ -36,6 +39,7 @@ namespace GodotAddinVS
     [ProvideOptionPage(typeof(GeneralOptionsPage),
         "Godot", "General", 0, 0, true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
+    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionOpening_string, PackageAutoLoadFlags.BackgroundLoad)]
     public sealed class GodotPackage : AsyncPackage
     {
         /// <summary>
@@ -61,22 +65,73 @@ namespace GodotAddinVS
         /// <param name="cancellationToken">A cancellation token to monitor for initialization cancellation, which can occur when VS is shutting down.</param>
         /// <param name="progress">A provider for progress updates.</param>
         /// <returns>A task representing the async work of package initialization, or an already completed task if there is none. Do not return null from this method.</returns>
-        protected override async Task InitializeAsync(CancellationToken cancellationToken,
-            IProgress<ServiceProgressData> progress)
+        protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
-            // When initialized asynchronously, the current thread may be a background thread at this point.
-            // Do any initialization that requires the UI thread after switching to the UI thread.
-            await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+            bool isSolutionLoaded = await IsSolutionLoadedAsync();
+
+            if (isSolutionLoaded)
+            {
+                await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+                SolutionOpen();
+                
+            }
+
+            SolutionEvents.OnAfterOpenSolution += SolutionOpen;
+            SolutionEvents.OnBeforeCloseSolution += SolutionClosed;
 
             RegisterProjectFactory(new GodotFlavoredProjectFactory(this));
 
-            GodotSolutionEventsListener = new GodotSolutionEventsListener(this);
+        }
 
+        private void SolutionClosed(object sender, EventArgs e)
+        {
+            GodotSolutionHandler?.OnClosingSolution();
+        }
+
+
+        private async Task<bool> IsSolutionLoadedAsync()
+        {
+            await JoinableTaskFactory.SwitchToMainThreadAsync();
+            var solService = await GetServiceAsync(typeof(SVsSolution)) as IVsSolution;
+
+            ErrorHandler.ThrowOnFailure(solService.GetProperty((int)__VSPROPID.VSPROPID_IsSolutionOpen, out object value));
+
+            return value is bool isSolOpen && isSolOpen;
+        }
+        public static IEnumerable<IVsHierarchy> GetProjectsInSolution(IVsSolution solution, __VSENUMPROJFLAGS flags)
+        {
+            if (solution == null)
+                yield break;
+
+            IEnumHierarchies enumHierarchies;
+            Guid guid = Guid.Empty;
+            solution.GetProjectEnum((uint)flags, ref guid, out enumHierarchies);
+            if (enumHierarchies == null)
+                yield break;
+
+            IVsHierarchy[] hierarchy = new IVsHierarchy[1];
+            uint fetched;
+            while (enumHierarchies.Next(1, hierarchy, out fetched) == VSConstants.S_OK && fetched == 1)
+            {
+                if (hierarchy.Length > 0 && hierarchy[0] != null)
+                    yield return hierarchy[0];
+            }
+        }
+
+        private void SolutionOpen(object sender = null, EventArgs e = null)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var service = GetService(typeof(SVsSolution)) as IVsSolution;
+            GodotSolutionHandler = new GodotSolutionHandler(service, this);
+            foreach (var project in GetProjectsInSolution(service, __VSENUMPROJFLAGS.EPF_LOADEDINSOLUTION))
+            {
+                GodotSolutionHandler.OnProjectOpened(project);
+            }
             var completionProviderContext = new GodotVsProviderContext(this);
             BaseCompletionProvider.Context = completionProviderContext;
         }
 
-        internal GodotSolutionEventsListener GodotSolutionEventsListener { get; private set; }
+        internal GodotSolutionHandler GodotSolutionHandler { get; private set; }
 
         public GodotVSLogger Logger { get; } = new GodotVSLogger();
 
@@ -106,5 +161,12 @@ namespace GodotAddinVS
         }
 
         #endregion
+
+        protected override void Dispose(bool disposing)
+        {
+            GodotSolutionHandler?.Dispose();
+            GodotSolutionHandler = null;
+            base.Dispose(disposing);
+        }
     }
 }

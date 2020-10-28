@@ -14,23 +14,24 @@ using Microsoft.VisualStudio.Shell.Interop;
 
 namespace GodotAddinVS
 {
-    internal class GodotSolutionEventsListener : SolutionEventsListener
+    internal class GodotSolutionHandler : IDisposable
     {
+        private readonly IVsSolution _solution;
+        private readonly IServiceProvider _serviceProvider;
         private static readonly object RegisterLock = new object();
         private bool _registered;
-
         private string _godotProjectDir;
 
         private DebuggerEvents DebuggerEvents { get; set; }
 
-        private IServiceContainer ServiceContainer => (IServiceContainer)ServiceProvider;
+        private IServiceContainer ServiceContainer => (IServiceContainer)_serviceProvider;
 
         public string SolutionDir
         {
             get
             {
                 ThreadHelper.ThrowIfNotOnUIThread();
-                Solution.GetSolutionInfo(out string solutionDir, out string solutionFile, out string userOptsFile);
+                _solution.GetSolutionInfo(out string solutionDir, out string solutionFile, out string userOptsFile);
                 _ = solutionFile;
                 _ = userOptsFile;
                 return solutionDir;
@@ -39,16 +40,11 @@ namespace GodotAddinVS
 
         public Client GodotMessagingClient { get; private set; }
 
-        public GodotSolutionEventsListener(IServiceProvider serviceProvider)
-            : base(serviceProvider)
+        public GodotSolutionHandler(IVsSolution solution, IServiceProvider serviceProvider)
         {
+            _solution = solution;
+            _serviceProvider = serviceProvider;
             ThreadHelper.ThrowIfNotOnUIThread();
-            Init();
-        }
-
-        public override int OnBeforeCloseProject(IVsHierarchy hierarchy, int removed)
-        {
-            return VSConstants.S_OK;
         }
 
         private static IEnumerable<Guid> ParseProjectTypeGuids(string projectTypeGuids)
@@ -68,13 +64,14 @@ namespace GodotAddinVS
         private static bool IsGodotProject(IVsHierarchy hierarchy)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            return hierarchy is IVsAggregatableProject aggregatableProject &&
-                   aggregatableProject.GetAggregateProjectTypeGuids(out string projectTypeGuids) == 0 &&
-                   ParseProjectTypeGuids(projectTypeGuids)
-                       .Any(g => g == typeof(GodotFlavoredProjectFactory).GUID);
+            if (!(hierarchy is IVsAggregatableProject aggregatableProject))
+                return false;
+            if (aggregatableProject.GetAggregateProjectTypeGuids(out string projectTypeGuids) != 0) 
+                return false;
+            return ParseProjectTypeGuids(projectTypeGuids).Any(g => g == typeof(GodotFlavoredProjectFactory).GUID);
         }
 
-        public override int OnAfterOpenProject(IVsHierarchy hierarchy, int added)
+        public int OnProjectOpened(IVsHierarchy hierarchy)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -88,7 +85,7 @@ namespace GodotAddinVS
 
                 _godotProjectDir = SolutionDir;
 
-                DebuggerEvents = ServiceProvider.GetService<DTE>().Events.DebuggerEvents;
+                DebuggerEvents = _serviceProvider.GetService<DTE>().Events.DebuggerEvents;
                 DebuggerEvents.OnEnterDesignMode += DebuggerEvents_OnEnterDesignMode;
 
                 GodotMessagingClient?.Dispose();
@@ -105,7 +102,7 @@ namespace GodotAddinVS
             return VSConstants.S_OK;
         }
 
-        public override int OnBeforeCloseSolution(object pUnkReserved)
+        public int OnClosingSolution()
         {
             lock (RegisterLock)
                 _registered = false;
@@ -113,10 +110,8 @@ namespace GodotAddinVS
             return VSConstants.S_OK;
         }
 
-        protected override void Dispose(bool disposing)
+        public void Dispose()
         {
-            if (!disposing)
-                return;
             Close();
         }
 

@@ -38,13 +38,13 @@ namespace GodotAddinVS
 
         public bool CanRequestCompletionsFromServer()
         {
-            var godotMessagingClient = _package.GodotSolutionEventsListener?.GodotMessagingClient;
+            var godotMessagingClient = _package.GodotSolutionHandler?.GodotMessagingClient;
             return godotMessagingClient != null && godotMessagingClient.IsConnected;
         }
 
         public async Task<string[]> RequestCompletion(CompletionKind completionKind, string absoluteFilePath)
         {
-            var godotMessagingClient = _package.GodotSolutionEventsListener?.GodotMessagingClient;
+            var godotMessagingClient = _package.GodotSolutionHandler?.GodotMessagingClient;
 
             if (godotMessagingClient == null)
                 throw new InvalidOperationException();

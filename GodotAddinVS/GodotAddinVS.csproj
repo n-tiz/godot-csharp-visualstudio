@@ -54,7 +54,7 @@
     <Compile Include="GodotFlavoredProject.cs" />
     <Compile Include="GodotFlavoredProjectFactory.cs" />
     <Compile Include="GodotMessaging\MessageHandler.cs" />
-    <Compile Include="GodotSolutionEventsListener.cs" />
+    <Compile Include="GodotSolutionHandler.cs" />
     <Compile Include="GodotVariant.cs" />
     <Compile Include="GeneralOptionsPage.cs">
       <SubType>Component</SubType>
@@ -63,7 +63,6 @@
     <Compile Include="GodotVsProviderContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GodotPackage.cs" />
-    <Compile Include="SolutionEventsListener.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="source.extension.vsixmanifest">

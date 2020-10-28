@@ -102,7 +102,7 @@ namespace GodotAddinVS.Debugging
 
             var startArgs = new SoftDebuggerListenArgs(_baseProject.Name, IPAddress.Loopback, port) {MaxConnectionAttempts = 3};
 
-            var startInfo = new GodotStartInfo(startArgs, null, _baseProject) {WorkingDirectory = GodotPackage.Instance.GodotSolutionEventsListener?.SolutionDir};
+            var startInfo = new GodotStartInfo(startArgs, null, _baseProject) {WorkingDirectory = GodotPackage.Instance.GodotSolutionHandler?.SolutionDir};
             var session = new GodotDebuggerSession();
 
             var launcher = new MonoDebuggerLauncher(new Progress<string>());

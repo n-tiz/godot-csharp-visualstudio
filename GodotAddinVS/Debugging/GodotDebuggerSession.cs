@@ -38,7 +38,7 @@ namespace GodotAddinVS.Debugging
                 case ExecutionType.PlayInEditor:
                 case ExecutionType.Attach:
                     var godotMessagingClient =
-                        GodotPackage.Instance.GodotSolutionEventsListener?.GodotMessagingClient;
+                        GodotPackage.Instance.GodotSolutionHandler?.GodotMessagingClient;
                     godotMessagingClient?.SendRequest<ReloadScriptsResponse>(new ReloadScriptsRequest());
                     break;
                 default:
@@ -53,7 +53,7 @@ namespace GodotAddinVS.Debugging
             if (options.AlwaysUseConfiguredExecutable)
                 return options.GodotExecutablePath;
 
-            var godotMessagingClient = GodotPackage.Instance.GodotSolutionEventsListener?.GodotMessagingClient;
+            var godotMessagingClient = GodotPackage.Instance.GodotSolutionHandler?.GodotMessagingClient;
 
             string godotPath = godotMessagingClient?.GodotEditorExecutablePath;
 
@@ -88,7 +88,7 @@ namespace GodotAddinVS.Debugging
                     StartListening(godotStartInfo, out var assignedDebugPort);
 
                     var godotMessagingClient =
-                        GodotPackage.Instance.GodotSolutionEventsListener?.GodotMessagingClient;
+                        GodotPackage.Instance.GodotSolutionHandler?.GodotMessagingClient;
 
                     if (godotMessagingClient == null || !godotMessagingClient.IsConnected)
                     {
