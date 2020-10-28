@@ -8,6 +8,7 @@ using GodotAddinVS.Debugging;
 using GodotAddinVS.GodotMessaging;
 using GodotTools.IdeMessaging;
 using GodotTools.IdeMessaging.Requests;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
@@ -47,7 +48,7 @@ namespace GodotAddinVS
 
         public override int OnBeforeCloseProject(IVsHierarchy hierarchy, int removed)
         {
-            return 0;
+            return VSConstants.S_OK;
         }
 
         private static IEnumerable<Guid> ParseProjectTypeGuids(string projectTypeGuids)
@@ -78,12 +79,12 @@ namespace GodotAddinVS
             ThreadHelper.ThrowIfNotOnUIThread();
 
             if (!IsGodotProject(hierarchy))
-                return 0;
+                return VSConstants.S_OK;
 
             lock (RegisterLock)
             {
                 if (_registered)
-                    return 0;
+                    return VSConstants.S_OK;
 
                 _godotProjectDir = SolutionDir;
 
@@ -101,7 +102,7 @@ namespace GodotAddinVS
                 _registered = true;
             }
 
-            return 0;
+            return VSConstants.S_OK;
         }
 
         public override int OnBeforeCloseSolution(object pUnkReserved)
@@ -109,7 +110,7 @@ namespace GodotAddinVS
             lock (RegisterLock)
                 _registered = false;
             Close();
-            return 0;
+            return VSConstants.S_OK;
         }
 
         protected override void Dispose(bool disposing)
