@@ -2,12 +2,18 @@ using System;
 
 namespace GodotAddinVS.Debugging
 {
+    public enum ExecutionType : uint
+    {
+        PlayInEditor = 0,
+        Launch,
+        Attach
+    }
+
     public class GodotDebugTarget
     {
-        private const string DebugTargetsGuidStr = "4E50788E-B023-4F77-AFE9-797603876907";
-        public static readonly Guid DebugTargetsGuid = new Guid(DebugTargetsGuidStr);
+        public static readonly Guid DebugTargetsGuid = new Guid("4E50788E-B023-4F77-AFE9-797603876907");
 
-        public Guid Guid { get; }
+        public Guid Guid => DebugTargetsGuid;
 
         public uint Id { get; }
 
@@ -17,17 +23,10 @@ namespace GodotAddinVS.Debugging
 
         public GodotDebugTarget(ExecutionType executionType, string name)
         {
-            Guid = DebugTargetsGuid;
             Id = 0x8192 + (uint) executionType;
             ExecutionType = executionType;
             Name = name;
         }
     }
 
-    public enum ExecutionType : uint
-    {
-        PlayInEditor = 0,
-        Launch,
-        Attach
-    }
 }

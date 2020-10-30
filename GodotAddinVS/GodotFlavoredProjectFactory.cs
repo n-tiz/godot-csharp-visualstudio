@@ -1,22 +1,20 @@
 using Microsoft.VisualStudio.Shell.Flavor;
 using System;
 using System.Runtime.InteropServices;
+using GodotAddinVS.GodotMessaging;
 
 namespace GodotAddinVS
 {
-    [Guid(GodotPackage.GodotProjectGuid)]
     public class GodotFlavoredProjectFactory : FlavoredProjectFactoryBase
     {
-        private readonly GodotPackage _package;
-
-        public GodotFlavoredProjectFactory(GodotPackage package)
+        public GodotFlavoredProjectFactory()
         {
-            _package = package;
+            //Used for debug breakpoints, do not remove
         }
 
         protected override object PreCreateForOuter(IntPtr outerProjectIUnknown)
         {
-            return new GodotFlavoredProject(_package);
+            return new GodotFlavoredProject();
         }
     }
 }

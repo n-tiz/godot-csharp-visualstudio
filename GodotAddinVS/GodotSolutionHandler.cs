@@ -68,45 +68,27 @@ namespace GodotAddinVS
             return hierarchy.IsCapabilityMatch("CPS");
         }
 
-        //private static string GetSdk(IVsHierarchy hierarchy)
-        //{
-        //    return hierarchy.IsCapabilityMatch("Godot");
-        //}
-
-        private static bool IsGodotProject(IVsHierarchy hierarchy)
-        {
-            //ThreadHelper.ThrowIfNotOnUIThread();
-            //IVsBuildPropertyStorage buildPropertyStorage =
-            //    hierarchy as IVsBuildPropertyStorage;
-            //string sdk;
-            //buildPropertyStorage.(VSConstants.VSITEMID_NIL, "Sdk", out sdk);
-            //if (!IsCpsProject(hierarchy))
-            //    return false;
-            //var test =              hierarchy.IsCapabilityMatch("Godot");
-
-            ////if (!GetSdk(hierarchy).Contains("Godot"))
-            ////    return false;
-            //return test;
-
-     //       ShowNodeName(hierarchy, VSConstants.VSITEMID_ROOT);
-            return true;
-        }
-
-        private static void ShowNodeName(IVsHierarchy hierarchy, uint itemId)
+        private string GetSdk(IVsHierarchy hierarchy)
         {
             int result;
-            object value = null;
-            string name = "";
-            string canonicalName = "";
+            result = hierarchy.GetCanonicalName(VSConstants.VSITEMID_ROOT, out string projectFilePath);
+            if (result != VSConstants.S_OK) return null;
+            if (!File.Exists(projectFilePath)) return null;
 
-            result = hierarchy.GetProperty(itemId, (int)__VSHPROPID.VSHPROPID_Name, out value);
+            return "";
+        }
 
-            if (result == VSConstants.S_OK && value != null)
-            {
-                name = value.ToString();
-            }
+        private bool IsGodotProject(IVsHierarchy hierarchy)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return true;
 
-            result = hierarchy.GetCanonicalName(itemId, out canonicalName);
+            if (!IsCpsProject(hierarchy))
+                return false;
+            var sdk = GetSdk(hierarchy);
+            if (string.IsNullOrEmpty(sdk) || !sdk.Contains("Godot"))
+                return false;
+            return true;
         }
 
         public int OnProjectOpened(IVsHierarchy hierarchy)
@@ -127,8 +109,7 @@ namespace GodotAddinVS
                 DebuggerEvents.OnEnterDesignMode += DebuggerEvents_OnEnterDesignMode;
 
                 GodotMessagingClient?.Dispose();
-                GodotMessagingClient = new Client(identity: "VisualStudio",
-                    _godotProjectDir, new MessageHandler(), GodotPackage.Instance.Logger);
+                GodotMessagingClient = new Client(identity: "VisualStudio", _godotProjectDir, new MessageHandler(GodotPackage.Instance.Logger), GodotPackage.Instance.Logger);
                 GodotMessagingClient.Connected += OnClientConnected;
                 GodotMessagingClient.Start();
 
@@ -174,9 +155,7 @@ namespace GodotAddinVS
             if (GodotMessagingClient == null || !GodotMessagingClient.IsConnected)
                 return;
 
-            var currentDebugTarget = GodotDebugTargetSelection.Instance.CurrentDebugTarget;
-
-            if (currentDebugTarget != null && currentDebugTarget.ExecutionType == ExecutionType.PlayInEditor)
+            if (GodotPackage.Instance.DebugTargetSelection.CurrentDebugTarget.ExecutionType == ExecutionType.PlayInEditor)
                 _ = GodotMessagingClient.SendRequest<StopPlayResponse>(new StopPlayRequest());
         }
 

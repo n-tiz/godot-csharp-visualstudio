@@ -1,10 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using GodotTools.IdeMessaging;
-using GodotTools.IdeMessaging.Requests;
+using GodotAddinVS.Debugging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Events;
@@ -38,6 +36,7 @@ namespace GodotAddinVS
         "Godot", "General", 0, 0, true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionOpening_string, PackageAutoLoadFlags.BackgroundLoad)]
+    [ProvideAutoLoad(VSConstants.UICONTEXT.NoSolution_string, PackageAutoLoadFlags.BackgroundLoad)]
     public sealed class GodotPackage : AsyncPackage
     {
         /// <summary>
@@ -45,15 +44,27 @@ namespace GodotAddinVS
         /// </summary>
         public const string PackageGuidString = "fbf828da-088b-482a-a550-befaed4b5d25";
 
-        public const string GodotProjectGuid = "8F3E2DF0-C35C-4265-82FC-BEA011F4A7ED";
+        internal static GodotPackage Instance { get; private set; }
 
-        #region Package Members
-
-        public static GodotPackage Instance { get; private set; }
+        internal GodotSolutionHandler GodotSolutionHandler { get; private set; }
+        internal GodotDebugTargetSelection DebugTargetSelection { get; } = new GodotDebugTargetSelection();
+        internal GodotVSLogger Logger { get; } = new GodotVSLogger();
 
         public GodotPackage()
         {
             Instance = this;
+        }
+
+        private async Task<bool> IsSolutionLoadedAsync()
+        {
+            await JoinableTaskFactory.SwitchToMainThreadAsync();
+            var solService = await GetServiceAsync(typeof(SVsSolution)) as IVsSolution;
+
+            if (solService == null) return false;
+
+            ErrorHandler.ThrowOnFailure(solService.GetProperty((int)__VSPROPID.VSPROPID_IsSolutionOpen, out object value));
+
+            return value is bool isSolOpen && isSolOpen;
         }
 
         /// <summary>
@@ -65,20 +76,30 @@ namespace GodotAddinVS
         /// <returns>A task representing the async work of package initialization, or an already completed task if there is none. Do not return null from this method.</returns>
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
-            bool isSolutionLoaded = await IsSolutionLoadedAsync();
+            await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+            RegisterProjectFactory(new GodotFlavoredProjectFactory());
 
-            if (isSolutionLoaded)
+            if (await IsSolutionLoadedAsync())
             {
-                await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
                 SolutionOpen();
-                
             }
 
             SolutionEvents.OnAfterOpenSolution += SolutionOpen;
             SolutionEvents.OnBeforeCloseSolution += SolutionClosed;
+        }
 
-            RegisterProjectFactory(new GodotFlavoredProjectFactory(this));
 
+        #region Events handlers
+
+        private void SolutionOpen(object sender = null, EventArgs e = null)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var service = GetService(typeof(SVsSolution)) as IVsSolution;
+            GodotSolutionHandler = new GodotSolutionHandler(service, this);
+            foreach (var project in VsItemsHelper.GetProjectsInSolution(service, __VSENUMPROJFLAGS.EPF_LOADEDINSOLUTION))
+            {
+                GodotSolutionHandler.OnProjectOpened(project);
+            }
         }
 
         private void SolutionClosed(object sender, EventArgs e)
@@ -86,63 +107,19 @@ namespace GodotAddinVS
             GodotSolutionHandler?.OnClosingSolution();
         }
 
-
-        private async Task<bool> IsSolutionLoadedAsync()
-        {
-            await JoinableTaskFactory.SwitchToMainThreadAsync();
-            var solService = await GetServiceAsync(typeof(SVsSolution)) as IVsSolution;
-
-            ErrorHandler.ThrowOnFailure(solService.GetProperty((int)__VSPROPID.VSPROPID_IsSolutionOpen, out object value));
-
-            return value is bool isSolOpen && isSolOpen;
-        }
-        public static IEnumerable<IVsHierarchy> GetProjectsInSolution(IVsSolution solution, __VSENUMPROJFLAGS flags)
-        {
-            if (solution == null)
-                yield break;
-
-            IEnumHierarchies enumHierarchies;
-            Guid guid = Guid.Empty;
-            solution.GetProjectEnum((uint)flags, ref guid, out enumHierarchies);
-            if (enumHierarchies == null)
-                yield break;
-
-            IVsHierarchy[] hierarchy = new IVsHierarchy[1];
-            uint fetched;
-            while (enumHierarchies.Next(1, hierarchy, out fetched) == VSConstants.S_OK && fetched == 1)
-            {
-                if (hierarchy.Length > 0 && hierarchy[0] != null)
-                    yield return hierarchy[0];
-            }
-        }
-
-        private void SolutionOpen(object sender = null, EventArgs e = null)
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            var service = GetService(typeof(SVsSolution)) as IVsSolution;
-            GodotSolutionHandler = new GodotSolutionHandler(service, this);
-            foreach (var project in GetProjectsInSolution(service, __VSENUMPROJFLAGS.EPF_LOADEDINSOLUTION))
-            {
-                GodotSolutionHandler.OnProjectOpened(project);
-            }
-        }
-
-        internal GodotSolutionHandler GodotSolutionHandler { get; private set; }
-
-        public GodotVSLogger Logger { get; } = new GodotVSLogger();
+        #endregion
 
         public async Task ShowErrorMessageBoxAsync(string title, string message)
         {
             await JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            // ReSharper disable once SuspiciousTypeConversion.Global
             var uiShell = (IVsUIShell)await GetServiceAsync(typeof(SVsUIShell));
 
             if (uiShell == null)
                 throw new ServiceUnavailableException(typeof(SVsUIShell));
 
             var clsid = Guid.Empty;
-            Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(uiShell.ShowMessageBox(
+            ErrorHandler.ThrowOnFailure(uiShell.ShowMessageBox(
                 0,
                 ref clsid,
                 title,
@@ -156,10 +133,11 @@ namespace GodotAddinVS
                 pnResult: out _));
         }
 
-        #endregion
-
         protected override void Dispose(bool disposing)
         {
+            SolutionEvents.OnAfterOpenSolution -= SolutionOpen;
+            SolutionEvents.OnBeforeCloseSolution -= SolutionClosed;
+
             GodotSolutionHandler?.Dispose();
             GodotSolutionHandler = null;
             base.Dispose(disposing);

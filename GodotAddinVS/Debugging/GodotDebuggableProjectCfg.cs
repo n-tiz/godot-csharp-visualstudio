@@ -103,7 +103,7 @@ namespace GodotAddinVS.Debugging
             var startArgs = new SoftDebuggerListenArgs(_baseProject.Name, IPAddress.Loopback, port) {MaxConnectionAttempts = 3};
 
             var startInfo = new GodotStartInfo(startArgs, null, _baseProject) {WorkingDirectory = GodotPackage.Instance.GodotSolutionHandler?.SolutionDir};
-            var session = new GodotDebuggerSession();
+            var session = new GodotDebuggerSession(GodotPackage.Instance.DebugTargetSelection);
 
             var launcher = new MonoDebuggerLauncher(new Progress<string>());
 
@@ -134,8 +134,7 @@ namespace GodotAddinVS.Debugging
 
                 if (iidCfg == typeof(IVsProjectCfgDebugTargetSelection).GUID)
                 {
-                    ppCfg = Marshal.GetComInterfaceForObject(GodotDebugTargetSelection.Instance,
-                        typeof(IVsProjectCfgDebugTargetSelection));
+                    ppCfg = Marshal.GetComInterfaceForObject(GodotPackage.Instance.DebugTargetSelection, typeof(IVsProjectCfgDebugTargetSelection));
                     return VSConstants.S_OK;
                 }
 

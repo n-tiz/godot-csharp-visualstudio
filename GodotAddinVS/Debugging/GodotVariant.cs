@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace GodotAddinVS
+namespace GodotAddinVS.Debugging
 {
     // Incomplete implementation of the Godot's Variant encoder. Add missing parts as needed.
 

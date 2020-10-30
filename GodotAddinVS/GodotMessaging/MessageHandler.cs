@@ -10,7 +10,12 @@ namespace GodotAddinVS.GodotMessaging
 {
     public class MessageHandler : ClientMessageHandler
     {
-        private static ILogger Logger => GodotPackage.Instance.Logger;
+        private readonly ILogger _logger;
+
+        public MessageHandler(ILogger logger)
+        {
+            _logger = logger;
+        }
 
         protected override async Task<Response> HandleOpenFile(OpenFileRequest request)
         {
@@ -24,7 +29,7 @@ namespace GodotAddinVS.GodotMessaging
             }
             catch (ArgumentException e)
             {
-                Logger?.LogError("ItemOperations.OpenFile: Invalid path or file not found", e);
+                _logger?.LogError("ItemOperations.OpenFile: Invalid path or file not found", e);
                 return new OpenFileResponse {Status = MessageStatus.InvalidRequestBody};
             }
 

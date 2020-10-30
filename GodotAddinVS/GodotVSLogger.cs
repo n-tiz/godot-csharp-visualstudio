@@ -12,13 +12,8 @@ namespace GodotAddinVS
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            // ReSharper disable once SuspiciousTypeConversion.Global
-            var log = (IVsActivityLog)GodotPackage.Instance.GetService<SVsActivityLog>();
-
-            if (log == null)
-                return;
-
-            _ = log.LogEntry((uint)actType, this.ToString(), message);
+            var log = await GodotPackage.Instance.GetServiceAsync(typeof(SVsActivityLog)) as IVsActivityLog;
+            log?.LogEntry((uint)actType, this.ToString(), message);
         }
 
         public void LogDebug(string message)

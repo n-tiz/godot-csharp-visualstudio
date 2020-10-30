@@ -17,14 +17,20 @@ namespace GodotAddinVS.Debugging
 {
     internal class GodotDebuggerSession : SoftDebuggerSession
     {
+        private readonly GodotDebugTargetSelection _targetSelection;
         private bool _attached;
         private NetworkStream _godotRemoteDebuggerStream;
         private Process _process;
 
+        public GodotDebuggerSession(GodotDebugTargetSelection targetSelection)
+        {
+            _targetSelection = targetSelection;
+        }
+
         // TODO: Unused. Find a way to trigger this.
         public void SendReloadScripts()
         {
-            var executionType = GodotDebugTargetSelection.Instance.CurrentDebugTarget.ExecutionType;
+            var executionType = _targetSelection.CurrentDebugTarget.ExecutionType;
 
             switch (executionType)
             {
@@ -78,7 +84,7 @@ namespace GodotAddinVS.Debugging
         {
             var godotStartInfo = (GodotStartInfo)startInfo;
 
-            var executionType = GodotDebugTargetSelection.Instance.CurrentDebugTarget.ExecutionType;
+            var executionType = _targetSelection.CurrentDebugTarget.ExecutionType;
 
             switch (executionType)
             {
@@ -125,8 +131,7 @@ namespace GodotAddinVS.Debugging
                     // We use it to notify the game when assemblies should be reloaded.
                     var remoteDebugListener = new TcpListener(IPAddress.Any, 0);
                     remoteDebugListener.Start();
-                    _ = remoteDebugListener.AcceptTcpClientAsync()
-                        .ContinueWith(OnGodotRemoteDebuggerConnectedAsync, TaskScheduler.Default);
+                    _ = remoteDebugListener.AcceptTcpClientAsync().ContinueWith(OnGodotRemoteDebuggerConnectedAsync, TaskScheduler.Default);
 
                     string workingDir = startInfo.WorkingDirectory;
                     const string host = "127.0.0.1";
@@ -188,10 +193,10 @@ namespace GodotAddinVS.Debugging
             if (!_attached)
             {
                 var options = (GeneralOptionsPage)GodotPackage.Instance.GetDialogPage(typeof(GeneralOptionsPage));
-
                 // If a connection is never established and we try to stop debugging, Visual Studio will freeze
                 // for a long time for some reason. I have no idea why this happens. There may be something
                 // we're doing wrong. For now we'll limit the time we wait for incoming connections.
+                //TODO: I think maybe we need to use async method to avoid VS to freeze
                 _ = Task.Delay(options.DebuggerListenTimeout).ContinueWith(r =>
                 {
                     if (!HasExited && !IsConnected)
@@ -220,18 +225,16 @@ namespace GodotAddinVS.Debugging
             }
         }
 
-        [SuppressMessage("ReSharper", "VSTHRD103")]
         private async Task OnGodotRemoteDebuggerConnectedAsync(Task<TcpClient> task)
         {
-            var tcpClient = task.Result;
+            var tcpClient = await task;
             _godotRemoteDebuggerStream = tcpClient.GetStream();
             var buffer = new byte[1000];
             while (tcpClient.Connected)
             {
                 // There is no library to decode this messages, so
                 // we just pump buffer so it doesn't go out of memory
-                var readBytes = await _godotRemoteDebuggerStream.ReadAsync(buffer, 0, buffer.Length);
-                _ = readBytes;
+                await _godotRemoteDebuggerStream.ReadAsync(buffer, 0, buffer.Length);
             }
         }
 

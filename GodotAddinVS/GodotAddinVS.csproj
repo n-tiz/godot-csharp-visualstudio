@@ -55,13 +55,14 @@
     <Compile Include="GodotFlavoredProjectFactory.cs" />
     <Compile Include="GodotMessaging\MessageHandler.cs" />
     <Compile Include="GodotSolutionHandler.cs" />
-    <Compile Include="GodotVariant.cs" />
+    <Compile Include="Debugging\GodotVariant.cs" />
     <Compile Include="GeneralOptionsPage.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="GodotVSLogger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GodotPackage.cs" />
+    <Compile Include="VsItemsHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="source.extension.vsixmanifest">

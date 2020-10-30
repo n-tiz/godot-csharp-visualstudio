@@ -1,28 +1,22 @@
-using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.Shell.Flavor;
-using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Runtime.InteropServices;
 using GodotAddinVS.Debugging;
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Flavor;
+using Microsoft.VisualStudio.Shell.Interop;
 
-namespace GodotAddinVS
+namespace GodotAddinVS.GodotMessaging
 {
     [ComVisible(true)]
     [ClassInterface(ClassInterfaceType.None)]
-    [Guid(GodotPackage.GodotProjectGuid)]
     internal class GodotFlavoredProject : FlavoredProjectBase, IVsProjectFlavorCfgProvider
     {
         private IVsProjectFlavorCfgProvider _innerFlavorConfig;
-        private GodotPackage _package;
-
-        public GodotFlavoredProject(GodotPackage package)
-        {
-            _package = package;
-        }
 
         public int CreateProjectFlavorCfg(IVsCfg pBaseProjectCfg, out IVsProjectFlavorCfg ppFlavorCfg)
         {
-            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+            ThreadHelper.ThrowIfNotOnUIThread();
 
             ppFlavorCfg = null;
 
@@ -39,13 +33,13 @@ namespace GodotAddinVS
 
         protected override void SetInnerProject(IntPtr innerIUnknown)
         {
-            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+            ThreadHelper.ThrowIfNotOnUIThread();
 
             object inner = Marshal.GetObjectForIUnknown(innerIUnknown);
             _innerFlavorConfig = inner as IVsProjectFlavorCfgProvider;
 
             if (serviceProvider == null)
-                serviceProvider = _package;
+                serviceProvider = GodotPackage.Instance;
 
             base.SetInnerProject(innerIUnknown);
         }
