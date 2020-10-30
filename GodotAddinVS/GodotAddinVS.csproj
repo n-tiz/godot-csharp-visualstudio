@@ -51,7 +51,7 @@
     <Compile Include="Debugging\GodotDebugTarget.cs" />
     <Compile Include="Debugging\GodotDebugTargetSelection.cs" />
     <Compile Include="Debugging\GodotStartInfo.cs" />
-    <Compile Include="GodotFlavoredProject.cs" />
+    <Compile Include="GodotMessaging\GodotFlavoredProject.cs" />
     <Compile Include="GodotFlavoredProjectFactory.cs" />
     <Compile Include="GodotMessaging\MessageHandler.cs" />
     <Compile Include="GodotSolutionHandler.cs" />
@@ -60,7 +60,6 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="GodotVSLogger.cs" />
-    <Compile Include="GodotVsProviderContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GodotPackage.cs" />
   </ItemGroup>
@@ -101,12 +100,6 @@
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\GodotCompletionProviders\GodotCompletionProviders.csproj">
-      <Project>{a9ea6427-c5e2-4207-bbbf-a1f44a361339}</Project>
-      <Name>GodotCompletionProviders</Name>
-    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <GetVsixSourceItemsDependsOn>$(GetVsixSourceItemsDependsOn);IncludeNuGetResolvedAssets</GetVsixSourceItemsDependsOn>

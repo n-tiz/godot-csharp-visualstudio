@@ -6,7 +6,7 @@ using ThreadHelper = Microsoft.VisualStudio.Shell.ThreadHelper;
 namespace GodotAddinVS
 {
     // ReSharper disable once InconsistentNaming
-    public class GodotVSLogger : GodotTools.IdeMessaging.ILogger, GodotCompletionProviders.ILogger
+    public class GodotVSLogger : GodotTools.IdeMessaging.ILogger
     {
         private async Task LogMessageAsync(__ACTIVITYLOG_ENTRYTYPE actType, string message)
         {

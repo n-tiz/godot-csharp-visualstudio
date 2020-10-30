@@ -3,14 +3,12 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using GodotCompletionProviders;
 using GodotTools.IdeMessaging;
 using GodotTools.IdeMessaging.Requests;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Events;
 using Microsoft.VisualStudio.Shell.Interop;
-using ILogger = GodotCompletionProviders.ILogger;
 using Task = System.Threading.Tasks.Task;
 
 namespace GodotAddinVS
@@ -127,8 +125,6 @@ namespace GodotAddinVS
             {
                 GodotSolutionHandler.OnProjectOpened(project);
             }
-            var completionProviderContext = new GodotVsProviderContext(this);
-            BaseCompletionProvider.Context = completionProviderContext;
         }
 
         internal GodotSolutionHandler GodotSolutionHandler { get; private set; }

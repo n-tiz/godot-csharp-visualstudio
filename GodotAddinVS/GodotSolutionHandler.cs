@@ -8,6 +8,7 @@ using GodotAddinVS.Debugging;
 using GodotAddinVS.GodotMessaging;
 using GodotTools.IdeMessaging;
 using GodotTools.IdeMessaging.Requests;
+using Microsoft;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -61,14 +62,51 @@ namespace GodotAddinVS
             return guidList.ToArray();
         }
 
+        internal static bool IsCpsProject(IVsHierarchy hierarchy)
+        {
+            Requires.NotNull(hierarchy, "hierarchy");
+            return hierarchy.IsCapabilityMatch("CPS");
+        }
+
+        //private static string GetSdk(IVsHierarchy hierarchy)
+        //{
+        //    return hierarchy.IsCapabilityMatch("Godot");
+        //}
+
         private static bool IsGodotProject(IVsHierarchy hierarchy)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            if (!(hierarchy is IVsAggregatableProject aggregatableProject))
-                return false;
-            if (aggregatableProject.GetAggregateProjectTypeGuids(out string projectTypeGuids) != 0) 
-                return false;
-            return ParseProjectTypeGuids(projectTypeGuids).Any(g => g == typeof(GodotFlavoredProjectFactory).GUID);
+            //ThreadHelper.ThrowIfNotOnUIThread();
+            //IVsBuildPropertyStorage buildPropertyStorage =
+            //    hierarchy as IVsBuildPropertyStorage;
+            //string sdk;
+            //buildPropertyStorage.(VSConstants.VSITEMID_NIL, "Sdk", out sdk);
+            //if (!IsCpsProject(hierarchy))
+            //    return false;
+            //var test =              hierarchy.IsCapabilityMatch("Godot");
+
+            ////if (!GetSdk(hierarchy).Contains("Godot"))
+            ////    return false;
+            //return test;
+
+     //       ShowNodeName(hierarchy, VSConstants.VSITEMID_ROOT);
+            return true;
+        }
+
+        private static void ShowNodeName(IVsHierarchy hierarchy, uint itemId)
+        {
+            int result;
+            object value = null;
+            string name = "";
+            string canonicalName = "";
+
+            result = hierarchy.GetProperty(itemId, (int)__VSHPROPID.VSHPROPID_Name, out value);
+
+            if (result == VSConstants.S_OK && value != null)
+            {
+                name = value.ToString();
+            }
+
+            result = hierarchy.GetCanonicalName(itemId, out canonicalName);
         }
 
         public int OnProjectOpened(IVsHierarchy hierarchy)
