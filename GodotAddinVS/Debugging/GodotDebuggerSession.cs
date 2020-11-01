@@ -6,6 +6,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using GodotAddinVS.Debugging.Variants;
 using GodotTools.IdeMessaging;
 using GodotTools.IdeMessaging.Requests;
 using Microsoft.VisualStudio;
@@ -17,38 +18,35 @@ namespace GodotAddinVS.Debugging
 {
     internal class GodotDebuggerSession : SoftDebuggerSession
     {
-        private readonly GodotDebugTargetSelection _targetSelection;
+        private readonly ExecutionType _type;
         private bool _attached;
         private NetworkStream _godotRemoteDebuggerStream;
         private Process _process;
 
-        public GodotDebuggerSession(GodotDebugTargetSelection targetSelection)
+        public GodotDebuggerSession(ExecutionType type)
         {
-            _targetSelection = targetSelection;
+            _type = type;
         }
 
         // TODO: Unused. Find a way to trigger this.
         public void SendReloadScripts()
         {
-            var executionType = _targetSelection.CurrentDebugTarget.ExecutionType;
 
-            switch (executionType)
+            switch (_type)
             {
                 case ExecutionType.Launch:
-                    GodotVariantEncoder.Encode(
-                        new List<GodotVariant> {"reload_scripts"},
-                        _godotRemoteDebuggerStream
-                    );
+                    var reloadScriptArg = new GodotVariant(GodotVariant.Type.String, "reload_scripts");
+                    var args = new List<GodotVariant>(){ reloadScriptArg };
+                    GodotVariantEncoder.Encode(new GodotVariant(GodotVariant.Type.Array, args), _godotRemoteDebuggerStream);
                     _godotRemoteDebuggerStream.Flush();
                     break;
                 case ExecutionType.PlayInEditor:
                 case ExecutionType.Attach:
-                    var godotMessagingClient =
-                        GodotPackage.Instance.GodotSolutionHandler?.GodotMessagingClient;
+                    var godotMessagingClient = GodotPackage.Instance.GodotSolutionHandler?.GodotMessagingClient;
                     godotMessagingClient?.SendRequest<ReloadScriptsResponse>(new ReloadScriptsRequest());
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(executionType.ToString());
+                    throw new ArgumentOutOfRangeException(_type.ToString());
             }
         }
 
@@ -79,14 +77,12 @@ namespace GodotAddinVS.Debugging
             _ = GodotPackage.Instance.ShowErrorMessageBoxAsync(title, errorMessage);
             EndSession();
         }
-
+        
         protected override void OnRun(DebuggerStartInfo startInfo)
         {
             var godotStartInfo = (GodotStartInfo)startInfo;
 
-            var executionType = _targetSelection.CurrentDebugTarget.ExecutionType;
-
-            switch (executionType)
+            switch (_type)
             {
                 case ExecutionType.PlayInEditor:
                 {
@@ -187,7 +183,7 @@ namespace GodotAddinVS.Debugging
                     break;
                 }
                 default:
-                    throw new ArgumentOutOfRangeException(executionType.ToString());
+                    throw new ArgumentOutOfRangeException(_type.ToString());
             }
 
             if (!_attached)
@@ -209,6 +205,7 @@ namespace GodotAddinVS.Debugging
                 }, TaskScheduler.Default);
             }
         }
+
 
         protected override void OnExit()
         {

@@ -46,16 +46,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Debugging\GodotDebuggableProjectCfg.cs" />
+    <Compile Include="Debugging\ExecutionType.cs" />
+    <Compile Include="Debugging\GodotDebuggableProject.cs" />
     <Compile Include="Debugging\GodotDebuggerSession.cs" />
-    <Compile Include="Debugging\GodotDebugTarget.cs" />
-    <Compile Include="Debugging\GodotDebugTargetSelection.cs" />
     <Compile Include="Debugging\GodotStartInfo.cs" />
-    <Compile Include="GodotMessaging\GodotFlavoredProject.cs" />
-    <Compile Include="GodotFlavoredProjectFactory.cs" />
+    <Compile Include="Debugging\Variants\GodotVariantEncoder.cs" />
     <Compile Include="GodotMessaging\MessageHandler.cs" />
     <Compile Include="GodotSolutionHandler.cs" />
-    <Compile Include="Debugging\GodotVariant.cs" />
+    <Compile Include="Debugging\Variants\GodotVariant.cs" />
     <Compile Include="GeneralOptionsPage.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -74,8 +72,12 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Clide" Version="4.1.1" ExcludeAssets="runtime" />
-    <PackageReference Include="Clide.Windows" Version="4.1.1" ExcludeAssets="runtime" />
+    <PackageReference Include="Clide">
+      <Version>4.1.1</Version>
+    </PackageReference>
+    <PackageReference Include="Clide.Windows">
+      <Version>4.1.1</Version>
+    </PackageReference>
     <PackageReference Include="GodotTools.IdeMessaging" Version="1.1.1" />
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="16.0.205" ExcludeAssets="runtime">
       <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -102,6 +104,7 @@
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <GetVsixSourceItemsDependsOn>$(GetVsixSourceItemsDependsOn);IncludeNuGetResolvedAssets</GetVsixSourceItemsDependsOn>
   </PropertyGroup>

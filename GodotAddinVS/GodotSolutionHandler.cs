@@ -23,6 +23,8 @@ namespace GodotAddinVS
         private bool _registered;
         private string _godotProjectDir;
 
+        public Project Project { get; private set; }
+
         private DebuggerEvents DebuggerEvents { get; set; }
 
         private IServiceContainer ServiceContainer => (IServiceContainer)_serviceProvider;
@@ -97,9 +99,13 @@ namespace GodotAddinVS
 
             if (!IsGodotProject(hierarchy))
                 return VSConstants.S_OK;
+            
+            
+            hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID.VSHPROPID_ExtObject, out var project);
+            Project = project as EnvDTE.Project;
+            
 
-            lock (RegisterLock)
-            {
+            lock (RegisterLock) {
                 if (_registered)
                     return VSConstants.S_OK;
 
@@ -155,7 +161,7 @@ namespace GodotAddinVS
             if (GodotMessagingClient == null || !GodotMessagingClient.IsConnected)
                 return;
 
-            if (GodotPackage.Instance.DebugTargetSelection.CurrentDebugTarget.ExecutionType == ExecutionType.PlayInEditor)
+            if (GodotPackage.Instance.RunningProject.ExecutionType == ExecutionType.PlayInEditor)
                 _ = GodotMessagingClient.SendRequest<StopPlayResponse>(new StopPlayRequest());
         }
 

@@ -20,29 +20,5 @@ namespace GodotAddinVS
         [Description("Time in milliseconds after which the debugging session will end if no debugger is connected")]
         public int DebuggerListenTimeout { get; set; } = 10000;
 
-        [Category("Code Completion")]
-        [DisplayName("Provide Node Path Completions")]
-        [Description("Whether to provide code completion for node paths when a Godot editor is connected")]
-        public bool ProvideNodePathCompletions { get; set; } = true;
-
-        [Category("Code Completion")]
-        [DisplayName("Provide Input Action Completions")]
-        [Description("Whether to provide code completion for input actions when a Godot editor is connected")]
-        public bool ProvideInputActionCompletions { get; set; } = true;
-
-        [Category("Code Completion")]
-        [DisplayName("Provide Resource Path Completions")]
-        [Description("Whether to provide code completion for resource paths when a Godot editor is connected")]
-        public bool ProvideResourcePathCompletions { get; set; } = true;
-
-        [Category("Code Completion")]
-        [DisplayName("Provide Scene Path Completions")]
-        [Description("Whether to provide code completion for scene paths when a Godot editor is connected")]
-        public bool ProvideScenePathCompletions { get; set; } = true;
-
-        [Category("Code Completion")]
-        [DisplayName("Provide Signal Name Completions")]
-        [Description("Whether to provide code completion for signal names when a Godot editor is connected")]
-        public bool ProvideSignalNameCompletions { get; set; } = true;
     }
 }

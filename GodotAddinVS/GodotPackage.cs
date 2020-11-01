@@ -32,10 +32,7 @@ namespace GodotAddinVS
     /// </remarks>
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [Guid(PackageGuidString)]
-    [ProvideProjectFactory(typeof(GodotFlavoredProjectFactory), "Godot.Project", null, "csproj", "csproj", null,
-        LanguageVsTemplate = "CSharp", TemplateGroupIDsVsTemplate = "Godot")]
-    [ProvideOptionPage(typeof(GeneralOptionsPage),
-        "Godot", "General", 0, 0, true)]
+    [ProvideOptionPage(typeof(GeneralOptionsPage), "Godot", "General", 0, 0, true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionOpening_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.NoSolution_string, PackageAutoLoadFlags.BackgroundLoad)]
@@ -49,8 +46,8 @@ namespace GodotAddinVS
         internal static GodotPackage Instance { get; private set; }
 
         internal GodotSolutionHandler GodotSolutionHandler { get; private set; }
-        internal GodotDebugTargetSelection DebugTargetSelection { get; } = new GodotDebugTargetSelection();
         internal GodotVSLogger Logger { get; } = new GodotVSLogger();
+        internal GodotDebuggableProject RunningProject { get; private set; }
 
         public GodotPackage()
         {
@@ -79,7 +76,6 @@ namespace GodotAddinVS
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
             await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-            RegisterProjectFactory(new GodotFlavoredProjectFactory());
 
             if (await IsSolutionLoadedAsync())
             {
@@ -102,7 +98,8 @@ namespace GodotAddinVS
             {
                 GodotSolutionHandler.OnProjectOpened(project);
             }
-            _ = Task.Run(HandleLauncherMessage);
+
+            HandleLauncherMessageAsync();
         }
 
         private void SolutionClosed(object sender, EventArgs e)
@@ -136,20 +133,22 @@ namespace GodotAddinVS
                 pnResult: out _));
         }
 
-        void HandleLauncherMessage()
+        async Task HandleLauncherMessageAsync()
         {
             while (true)
             {
                 // Won't work if multiple instances of visual studio use the Addin at the same time (PackageGuidString)
                 using var pipeServer = new NamedPipeServerStream(PackageGuidString, PipeDirection.In, 1);
                 using var streamReader = new StreamReader(pipeServer);
-                pipeServer.WaitForConnection();
-                var buffer = streamReader.ReadLine();
+                await pipeServer.WaitForConnectionAsync();
+                var buffer = await streamReader.ReadLineAsync();
                 Enum.TryParse(buffer, out ExecutionType argsAsEnum);
                 switch (argsAsEnum)
                 {
                     case ExecutionType.PlayInEditor:
-
+                        RunningProject = new GodotDebuggableProject(GodotSolutionHandler.Project,  argsAsEnum);
+                        await JoinableTaskFactory.SwitchToMainThreadAsync();
+                        RunningProject.DebugLaunch();
                         break;
                     case ExecutionType.Launch:
 
@@ -161,9 +160,11 @@ namespace GodotAddinVS
                         throw new ArgumentOutOfRangeException();
                 }
 
-                while ((buffer = streamReader.ReadLine()) != null)
+                while ((buffer = await streamReader.ReadLineAsync()) != null)
                 {
+                    // Maybe something to do later here
                 }
+
                 pipeServer.Disconnect();
             }
         }
