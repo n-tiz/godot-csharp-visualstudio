@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -100,6 +102,7 @@ namespace GodotAddinVS
             {
                 GodotSolutionHandler.OnProjectOpened(project);
             }
+            _ = Task.Run(HandleLauncherMessage);
         }
 
         private void SolutionClosed(object sender, EventArgs e)
@@ -131,6 +134,38 @@ namespace GodotAddinVS
                 OLEMSGICON.OLEMSGICON_CRITICAL,
                 0,
                 pnResult: out _));
+        }
+
+        void HandleLauncherMessage()
+        {
+            while (true)
+            {
+                // Won't work if multiple instances of visual studio use the Addin at the same time (PackageGuidString)
+                using var pipeServer = new NamedPipeServerStream(PackageGuidString, PipeDirection.In, 1);
+                using var streamReader = new StreamReader(pipeServer);
+                pipeServer.WaitForConnection();
+                var buffer = streamReader.ReadLine();
+                Enum.TryParse(buffer, out ExecutionType argsAsEnum);
+                switch (argsAsEnum)
+                {
+                    case ExecutionType.PlayInEditor:
+
+                        break;
+                    case ExecutionType.Launch:
+
+                        break;
+                    case ExecutionType.Attach:
+
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                while ((buffer = streamReader.ReadLine()) != null)
+                {
+                }
+                pipeServer.Disconnect();
+            }
         }
 
         protected override void Dispose(bool disposing)

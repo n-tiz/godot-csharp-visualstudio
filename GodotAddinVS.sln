@@ -4,6 +4,8 @@ VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotAddinVS", "GodotAddinVS\GodotAddinVS.csproj", "{7D64803D-2F8D-4597-9762-A316C74E9816}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotAddinVS.Launcher", "GodotAddinVS.Launcher\GodotAddinVS.Launcher.csproj", "{B4D5C7C5-5E9B-452E-988C-A0CB333F7F67}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,14 @@ Global
 		{7D64803D-2F8D-4597-9762-A316C74E9816}.net_4_5_Release|Any CPU.Build.0 = Release|Any CPU
 		{7D64803D-2F8D-4597-9762-A316C74E9816}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7D64803D-2F8D-4597-9762-A316C74E9816}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4D5C7C5-5E9B-452E-988C-A0CB333F7F67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4D5C7C5-5E9B-452E-988C-A0CB333F7F67}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4D5C7C5-5E9B-452E-988C-A0CB333F7F67}.net_4_5_Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4D5C7C5-5E9B-452E-988C-A0CB333F7F67}.net_4_5_Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4D5C7C5-5E9B-452E-988C-A0CB333F7F67}.net_4_5_Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4D5C7C5-5E9B-452E-988C-A0CB333F7F67}.net_4_5_Release|Any CPU.Build.0 = Release|Any CPU
+		{B4D5C7C5-5E9B-452E-988C-A0CB333F7F67}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4D5C7C5-5E9B-452E-988C-A0CB333F7F67}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
